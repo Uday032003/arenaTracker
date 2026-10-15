@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Bell } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.js';
 import { Logo } from '../common/Logo.js';
 
@@ -24,14 +24,6 @@ export function Header({ title }) {
           style={{ padding: '0.4rem', color: 'var(--accent-green)' }}
         >
           <Bell size={18} />
-        </button>
-
-        <button
-          className="btn btn-primary btn-sm header-quick-log"
-          onClick={() => navigate('/activities/new')}
-        >
-          <Plus size={14} />
-          <span>Quick Log</span>
         </button>
 
         {loading ? (

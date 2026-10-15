@@ -172,3 +172,11 @@ export const remindersApi = {
   complete: (id) => api.post(`/reminders/${id}/complete`),
   delete: (id) => api.delete(`/reminders/${id}`),
 };
+
+export const pushApi = {
+  getPublicKey: () => api.get('/push/vapid-public-key'),
+  getStatus: () => api.get('/push/status'),
+  subscribe: (data) => api.post('/push/subscribe', data),
+  unsubscribe: (data) => api.post('/push/unsubscribe', data),
+  sendTest: () => api.post('/push/test'),
+};

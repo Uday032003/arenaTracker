@@ -56,11 +56,14 @@ export function ActivityFormPage() {
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState(null);
 
-  // Quick inline item creation modal
-  const [isNewItemModalOpen, setIsNewItemModalOpen] = useState(false);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemType, setNewItemType] = useState('general');
-  const [newItemLoading, setNewItemLoading] = useState(false);
+  const handleNavigateToNewItem = () => {
+    const params = new URLSearchParams();
+    params.set('returnTo', '/activities/new');
+    if (searchQuery.trim()) {
+      params.set('name', searchQuery.trim());
+    }
+    navigate(`/items/new?${params.toString()}`);
+  };
 
   // Quick inline variant creation modal
   const [isNewVariantModalOpen, setIsNewVariantModalOpen] = useState(false);
@@ -86,6 +89,12 @@ export function ActivityFormPage() {
   useEffect(() => {
     loadItems();
   }, []);
+
+  useEffect(() => {
+    if (initialItemId) {
+      setSelectedItemId(initialItemId);
+    }
+  }, [initialItemId]);
 
   // When selected item changes, load its variants
   useEffect(() => {
@@ -116,27 +125,6 @@ export function ActivityFormPage() {
     i.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
 
-  const handleQuickCreateItem = async (e) => {
-    e.preventDefault();
-    if (!newItemName.trim()) return;
-
-    try {
-      setNewItemLoading(true);
-      const res = await itemsApi.create({
-        name: newItemName.trim(),
-        trackingType: newItemType,
-      });
-      const createdItem = res.data;
-      setItems((prev) => [createdItem, ...prev]);
-      setSelectedItemId(createdItem.id);
-      setIsNewItemModalOpen(false);
-      setNewItemName('');
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setNewItemLoading(false);
-    }
-  };
 
   const handleQuickCreateVariant = async (e) => {
     e.preventDefault();
@@ -234,10 +222,7 @@ export function ActivityFormPage() {
             <button
               type="button"
               className="btn btn-secondary btn-sm"
-              onClick={() => {
-                setNewItemName(searchQuery);
-                setIsNewItemModalOpen(true);
-              }}
+              onClick={handleNavigateToNewItem}
             >
               <Plus size={14} /> Create New Item
             </button>
@@ -251,7 +236,7 @@ export function ActivityFormPage() {
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
-                onClick={() => setIsNewItemModalOpen(true)}
+                onClick={handleNavigateToNewItem}
               >
                 <Plus size={14} /> Create First Item
               </button>
@@ -571,59 +556,6 @@ export function ActivityFormPage() {
         </div>
       </form>
 
-      {/* Quick Item Creation Modal */}
-      <Modal
-        isOpen={isNewItemModalOpen}
-        onClose={() => setIsNewItemModalOpen(false)}
-        title="Quick Create Item"
-      >
-        <form onSubmit={handleQuickCreateItem}>
-          <div className="form-group">
-            <label className="form-label">Item Name *</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="e.g. Chocolate, Night Ride, Biryani..."
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              required
-              autoFocus
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Tracking Type</label>
-            <select
-              className="form-select"
-              value={newItemType}
-              onChange={(e) => setNewItemType(e.target.value)}
-            >
-              <option value="general">General / Food & Drink</option>
-              <option value="receivable">Money Receivable (Installments)</option>
-              <option value="timed">Timed Activity</option>
-              <option value="trip">Trip or Ride</option>
-              <option value="call">Call or Communication</option>
-            </select>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setIsNewItemModalOpen(false)}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={newItemLoading || !newItemName.trim()}
-            >
-              {newItemLoading ? 'Creating...' : 'Create & Select'}
-            </button>
-          </div>
-        </form>
-      </Modal>
 
       {/* Quick Variant Creation Modal */}
       <Modal

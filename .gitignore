@@ -2,6 +2,10 @@
 node_modules/
 */node_modules/
 
+# Local database
+db_local_cluster/
+*/db_local_cluster/
+
 # Environment variables
 .env
 .env.local

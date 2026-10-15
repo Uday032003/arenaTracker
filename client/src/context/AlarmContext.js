@@ -3,6 +3,14 @@ import { useAuth } from './AuthContext.js';
 import { remindersApi } from '../services/api.js';
 import { alarmAudio, RINGTONE_PRESETS } from '../utils/alarmAudio.js';
 import { sendBrowserNotification, requestNotificationPermission } from '../utils/browserNotifications.js';
+import {
+  isPushSupported,
+  getExistingPushSubscription,
+  subscribeToPushNotifications,
+  unsubscribeFromPushNotifications,
+  registerServiceWorker,
+} from '../utils/webPush.js';
+import { pushApi } from '../services/api.js';
 
 const AlarmContext = createContext(null);
 
@@ -17,6 +25,28 @@ export function AlarmProvider({ children }) {
   const [volume, setVolumeState] = useState(() => alarmAudio.getVolume());
   const [customAudioName, setCustomAudioName] = useState(() => alarmAudio.getCustomAudioName());
   const [previewingId, setPreviewingId] = useState(null);
+
+  // Web Push Notification State
+  const [isPushSubscribed, setIsPushSubscribed] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+
+  // Check and sync push subscription status
+  const checkPushSubscription = useCallback(async () => {
+    if (!isPushSupported() || !user) return;
+    try {
+      const sub = await getExistingPushSubscription();
+      setIsPushSubscribed(Boolean(sub));
+    } catch (err) {
+      console.warn('[AlarmContext] Push check failed:', err);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (isPushSupported()) {
+      registerServiceWorker();
+      checkPushSubscription();
+    }
+  }, [checkPushSubscription]);
 
   const changeRingtone = (ringtoneId) => {
     alarmAudio.setRingtone(ringtoneId);
@@ -221,6 +251,44 @@ export function AlarmProvider({ children }) {
     });
   };
 
+  // Web Push actions
+  const enablePushNotifications = async () => {
+    try {
+      setPushLoading(true);
+      await subscribeToPushNotifications();
+      setIsPushSubscribed(true);
+      return { success: true };
+    } catch (err) {
+      console.error('[AlarmContext] Enable push failed:', err);
+      return { success: false, message: err.message };
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const disablePushNotifications = async () => {
+    try {
+      setPushLoading(true);
+      await unsubscribeFromPushNotifications();
+      setIsPushSubscribed(false);
+      return { success: true };
+    } catch (err) {
+      console.error('[AlarmContext] Disable push failed:', err);
+      return { success: false, message: err.message };
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const sendTestPush = async () => {
+    try {
+      const res = await pushApi.sendTest();
+      return res;
+    } catch (err) {
+      throw err;
+    }
+  };
+
   return (
     <AlarmContext.Provider
       value={{
@@ -243,6 +311,13 @@ export function AlarmProvider({ children }) {
         uploadCustomRingtone,
         removeCustomRingtone,
         customAudioName,
+        // Web Push notification controls
+        isPushSupported: isPushSupported(),
+        isPushSubscribed,
+        pushLoading,
+        enablePushNotifications,
+        disablePushNotifications,
+        sendTestPush,
       }}
     >
       {children}

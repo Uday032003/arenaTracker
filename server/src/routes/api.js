@@ -11,6 +11,7 @@ import insightsRoutes from '../modules/insights/insights.routes.js';
 import categoriesRoutes from '../modules/categories/categories.routes.js';
 import settingsRoutes from '../modules/settings/settings.routes.js';
 import remindersRoutes from '../modules/reminders/reminders.routes.js';
+import { pushRoutes } from '../modules/push/push.routes.js';
 
 const router = Router();
 
@@ -27,5 +28,6 @@ router.use('/insights', insightsRoutes);
 router.use('/categories', categoriesRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/reminders', remindersRoutes);
+router.use('/push', pushRoutes);
 
 export default router;

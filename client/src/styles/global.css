@@ -516,10 +516,6 @@ h3 {
   align-items: center;
 }
 
-.header-quick-log {
-  display: none !important;
-}
-
 .app-container {
   width: 100%;
   max-width: var(--max-content-width);
@@ -533,10 +529,6 @@ h3 {
 @media (min-width: 768px) {
   .header-mobile-brand {
     display: none;
-  }
-
-  .header-quick-log {
-    display: inline-flex !important;
   }
 
   .mobile-bottom-nav {

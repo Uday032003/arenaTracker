@@ -16,6 +16,8 @@ import {
   Clock,
   Music,
   X,
+  BellRing,
+  Send,
 } from 'lucide-react';
 import { remindersApi } from '../../services/api.js';
 import { useAlarm } from '../../context/AlarmContext.js';
@@ -33,6 +35,51 @@ export function RemindersPage() {
   const [editingReminder, setEditingReminder] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [isRingtoneModalOpen, setIsRingtoneModalOpen] = useState(false);
+
+  // Web Push controls from AlarmContext
+  const {
+    isPushSupported,
+    isPushSubscribed,
+    pushLoading,
+    enablePushNotifications,
+    disablePushNotifications,
+    sendTestPush,
+  } = useAlarm();
+  const [pushStatusMsg, setPushStatusMsg] = useState(null);
+  const [testingPush, setTestingPush] = useState(false);
+
+  const handleTogglePush = async () => {
+    setPushStatusMsg(null);
+    if (isPushSubscribed) {
+      const res = await disablePushNotifications();
+      if (res.success) {
+        setPushStatusMsg('Background push notifications disabled.');
+      } else {
+        setPushStatusMsg(`Error: ${res.message}`);
+      }
+    } else {
+      const res = await enablePushNotifications();
+      if (res.success) {
+        setPushStatusMsg('Background push notifications enabled! You will receive alarms even when the browser tab is closed.');
+      } else {
+        setPushStatusMsg(`Could not enable: ${res.message}`);
+      }
+    }
+    setTimeout(() => setPushStatusMsg(null), 6000);
+  };
+
+  const handleTestPush = async () => {
+    try {
+      setTestingPush(true);
+      const res = await sendTestPush();
+      setPushStatusMsg(res?.message || 'Test notification sent! Check your desktop notifications.');
+    } catch (err) {
+      setPushStatusMsg(`Failed to send test: ${err.message}`);
+    } finally {
+      setTestingPush(false);
+      setTimeout(() => setPushStatusMsg(null), 6000);
+    }
+  };
 
   const { testAlarm, checkDueReminders } = useAlarm();
 
@@ -243,7 +290,45 @@ export function RemindersPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
+          {isPushSupported && (
+            <>
+              <button
+                className={`btn btn-sm ${isPushSubscribed ? 'btn-secondary' : 'btn-ghost'}`}
+                style={{
+                  borderColor: isPushSubscribed ? 'var(--accent-green)' : 'var(--border-subtle)',
+                  color: isPushSubscribed ? 'var(--accent-green)' : 'var(--text-secondary)',
+                  gap: '6px',
+                }}
+                onClick={handleTogglePush}
+                disabled={pushLoading}
+                title="Get alerts on your computer even when the website is not open"
+              >
+                <BellRing size={15} />
+                <span>
+                  {pushLoading
+                    ? 'Updating...'
+                    : isPushSubscribed
+                    ? 'Background Alerts: ON'
+                    : 'Enable Background Alerts'}
+                </span>
+              </button>
+
+              {isPushSubscribed && (
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleTestPush}
+                  disabled={testingPush}
+                  title="Send a test notification to verify background alerts work on your device"
+                  style={{ gap: '4px', fontSize: 'var(--font-size-xs)' }}
+                >
+                  <Send size={13} />
+                  <span>{testingPush ? 'Sending...' : 'Test Push'}</span>
+                </button>
+              )}
+            </>
+          )}
+
           <button
             className="btn btn-secondary"
             onClick={() => setIsRingtoneModalOpen(true)}
@@ -258,6 +343,31 @@ export function RemindersPage() {
           </button>
         </div>
       </div>
+
+      {pushStatusMsg && (
+        <div
+          style={{
+            padding: 'var(--space-3) var(--space-4)',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--accent-green)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--text-primary)',
+            fontSize: 'var(--font-size-sm)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span>{pushStatusMsg}</span>
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ padding: '2px 6px' }}
+            onClick={() => setPushStatusMsg(null)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Metric Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)', width: '100%' }}>
