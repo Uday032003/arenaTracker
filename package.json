@@ -1,0 +1,20 @@
+{
+  "name": "personal-activity-memory-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready Personal Activity & Memory Tracker",
+  "scripts": {
+    "dev:server": "node --watch server/src/server.js",
+    "dev:client": "npm --prefix client run dev",
+    "dev": "node scripts/dev.js",
+    "build:client": "npm --prefix client run build",
+    "build": "npm --prefix client run build",
+    "migrate": "node server/src/db/migrate.js",
+    "test:server": "vitest run --dir server/tests",
+    "test:client": "vitest run --dir client/src",
+    "test": "vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
