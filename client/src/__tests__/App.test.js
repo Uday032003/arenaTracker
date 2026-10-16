@@ -47,6 +47,9 @@ describe('Frontend Component Tests', () => {
 
     const { container: c4 } = render(React.createElement(TrackingIcon, { name: 'phone', size: 20 }));
     expect(c4.querySelector('svg')).toBeDefined();
+
+    const { container: c5 } = render(React.createElement(TrackingIcon, { name: 'others', size: 20 }));
+    expect(c5.querySelector('svg')).toBeDefined();
   });
 
   it('renders ActiveTimerCard with item name and stop button', () => {

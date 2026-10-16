@@ -23,6 +23,11 @@ import {
   IndianRupee,
   Wallet,
   HandCoins,
+  CircleEllipsis,
+  MoreHorizontal,
+  Package,
+  Layers,
+  Boxes,
 } from 'lucide-react';
 
 const iconMap = {
@@ -60,6 +65,12 @@ const iconMap = {
   rupee: IndianRupee,
   receivable: HandCoins,
   handcoins: HandCoins,
+  others: CircleEllipsis,
+  other: CircleEllipsis,
+  more: MoreHorizontal,
+  package: Package,
+  layers: Layers,
+  boxes: Boxes,
 };
 
 export function TrackingIcon({ name = 'activity', size = 18, color, className = '' }) {

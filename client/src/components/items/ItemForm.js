@@ -8,7 +8,7 @@ import { Spinner } from '../common/Loader.js';
 export const AVAILABLE_ICONS = [
   'activity', 'utensils', 'footprints', 'bike', 'phone', 'coffee',
   'dumbbell', 'book', 'shopping', 'car', 'heart', 'plane', 'film', 'music',
-  'receivable', 'wallet', 'money'
+  'receivable', 'wallet', 'money', 'sparkles', 'others'
 ];
 
 export const PRESET_COLORS = [
@@ -262,7 +262,7 @@ export function ItemForm({
                 color: icon === ic ? 'var(--accent-green)' : 'var(--text-secondary)',
               }}
               onClick={() => setIcon(ic)}
-              title={ic}
+              title={ic === 'others' ? 'Others / Miscellaneous' : ic}
             >
               <TrackingIcon name={ic} size={18} />
             </button>
