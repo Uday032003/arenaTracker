@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.js';
 import { AlarmProvider } from './context/AlarmContext.js';
 import { ProtectedLayout, PublicLayout } from './components/layout/AppShell.js';
+import { ScrollToTop } from './components/common/ScrollToTop.js';
 
 // Auth Pages
 import { LoginPage } from './pages/auth/LoginPage.js';
@@ -27,6 +28,7 @@ export function App() {
     <AuthProvider>
       <AlarmProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             {/* Public Auth Routes */}
             <Route element={<PublicLayout />}>

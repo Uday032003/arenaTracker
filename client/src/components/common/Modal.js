@@ -1,7 +1,16 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '520px', closeDisabled = false }) {
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  footer,
+  maxWidth = '520px',
+  closeDisabled = false,
+  closeOnClickOutside = true,
+}) {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen && !closeDisabled) {
@@ -14,8 +23,15 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = '52
 
   if (!isOpen) return null;
 
+  const handleBackdropClick = (e) => {
+    if (closeDisabled || !closeOnClickOutside) return;
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="modal-overlay" onClick={closeDisabled ? undefined : onClose}>
+    <div className="modal-overlay" onClick={handleBackdropClick}>
       <div
         className="modal-content"
         style={{ maxWidth }}

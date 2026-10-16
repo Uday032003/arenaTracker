@@ -119,8 +119,8 @@ export function ItemDetailsPage() {
   // Delete dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [pinLoading, setPinLoading] = useState(false);
-  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [pinningAction, setPinningAction] = useState(null); // 'pin' | 'unpin' | null
+  const [archivingAction, setArchivingAction] = useState(null); // 'archive' | 'restore' | null
 
   const fetchItemData = async () => {
     try {
@@ -146,8 +146,10 @@ export function ItemDetailsPage() {
   }, [itemId]);
 
   const handleTogglePin = async () => {
+    if (pinningAction) return;
+    const action = item.is_pinned ? 'unpin' : 'pin';
     try {
-      setPinLoading(true);
+      setPinningAction(action);
       if (item.is_pinned) {
         await favoritesApi.unpin(item.id);
         setItem((prev) => ({ ...prev, is_pinned: false }));
@@ -158,13 +160,15 @@ export function ItemDetailsPage() {
     } catch (err) {
       alert(err.message || 'Failed to update pin');
     } finally {
-      setPinLoading(false);
+      setPinningAction(null);
     }
   };
 
   const handleArchive = async () => {
+    if (archivingAction) return;
+    const action = item.is_archived ? 'restore' : 'archive';
     try {
-      setArchiveLoading(true);
+      setArchivingAction(action);
       const nextState = !item.is_archived;
       await itemsApi.archive(item.id, nextState);
       setItem((prev) => ({ ...prev, is_archived: nextState }));
@@ -173,7 +177,7 @@ export function ItemDetailsPage() {
     } catch (err) {
       alert(err.message || 'Failed to archive item');
     } finally {
-      setArchiveLoading(false);
+      setArchivingAction(null);
     }
   };
 
@@ -255,7 +259,7 @@ export function ItemDetailsPage() {
           <button
             className="btn btn-secondary btn-sm"
             onClick={handleTogglePin}
-            disabled={pinLoading}
+            disabled={pinningAction !== null}
             style={{
               color: item.is_pinned ? 'var(--accent-green)' : 'inherit',
               display: 'inline-flex',
@@ -263,10 +267,10 @@ export function ItemDetailsPage() {
               gap: '6px',
             }}
           >
-            {pinLoading ? (
+            {pinningAction !== null ? (
               <>
                 <Spinner size={13} color="currentColor" />
-                <span>{item.is_pinned ? 'Unpinning...' : 'Pinning...'}</span>
+                <span>{pinningAction === 'unpin' ? 'Unpinning...' : 'Pinning...'}</span>
               </>
             ) : (
               <>
@@ -284,13 +288,13 @@ export function ItemDetailsPage() {
           <button
             className="btn btn-secondary btn-sm"
             onClick={handleArchive}
-            disabled={archiveLoading}
+            disabled={archivingAction !== null}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            {archiveLoading ? (
+            {archivingAction !== null ? (
               <>
                 <Spinner size={13} color="currentColor" />
-                <span>{item.is_archived ? 'Restoring...' : 'Archiving...'}</span>
+                <span>{archivingAction === 'restore' ? 'Restoring...' : 'Archiving...'}</span>
               </>
             ) : (
               <>

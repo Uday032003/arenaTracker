@@ -36,7 +36,7 @@ export function HomePage() {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [libraryItems, setLibraryItems] = useState([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
-  const [pinningId, setPinningId] = useState(null);
+  const [pinningState, setPinningState] = useState(null); // { id: item.id, action: 'pin' | 'unpin' }
 
   // Card action loading states
   const [unpinningId, setUnpinningId] = useState(null);
@@ -122,9 +122,10 @@ export function HomePage() {
   };
 
   const handleTogglePin = async (item) => {
-    if (pinningId) return;
+    if (pinningState) return;
+    const action = item.is_pinned ? 'unpin' : 'pin';
     try {
-      setPinningId(item.id);
+      setPinningState({ id: item.id, action });
       if (item.is_pinned) {
         await favoritesApi.unpin(item.id);
       } else {
@@ -137,7 +138,7 @@ export function HomePage() {
     } catch (err) {
       alert(err.message || 'Failed to update pin status');
     } finally {
-      setPinningId(null);
+      setPinningState(null);
     }
   };
 
@@ -581,6 +582,15 @@ export function HomePage() {
         isOpen={isPinModalOpen}
         onClose={() => setIsPinModalOpen(false)}
         title="Customize Home Items"
+        closeOnClickOutside={false}
+        footer={
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setIsPinModalOpen(false)}
+          >
+            Done
+          </button>
+        }
       >
         <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>
           Select which items from your library should appear on your Home screen.
@@ -636,7 +646,7 @@ export function HomePage() {
                 <button
                   className={`btn btn-sm ${item.is_pinned ? 'btn-danger' : 'btn-primary'}`}
                   onClick={() => handleTogglePin(item)}
-                  disabled={pinningId !== null}
+                  disabled={pinningState !== null}
                   style={{
                     minWidth: '100px',
                     display: 'inline-flex',
@@ -645,10 +655,10 @@ export function HomePage() {
                     gap: '6px',
                   }}
                 >
-                  {pinningId === item.id ? (
+                  {pinningState?.id === item.id ? (
                     <>
                       <Spinner size={13} color="currentColor" />
-                      <span>{item.is_pinned ? 'Unpinning...' : 'Pinning...'}</span>
+                      <span>{pinningState.action === 'unpin' ? 'Unpinning...' : 'Pinning...'}</span>
                     </>
                   ) : (
                     <span>{item.is_pinned ? 'Unpin' : 'Pin to Home'}</span>

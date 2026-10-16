@@ -1,13 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { MemoryRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { EmptyState } from '../components/common/EmptyState.js';
 import { TrackingIcon } from '../components/common/TrackingIcon.js';
 import { ActiveTimerCard } from '../components/sessions/ActiveTimerCard.js';
 import { Spinner } from '../components/common/Loader.js';
 import { ConfirmDialog } from '../components/common/ConfirmDialog.js';
+import { Modal } from '../components/common/Modal.js';
 import { Header } from '../components/layout/Header.js';
+import { ScrollToTop } from '../components/common/ScrollToTop.js';
 
 vi.mock('../context/AuthContext.js', () => ({
   useAuth: () => ({
@@ -120,7 +122,7 @@ describe('Frontend Component Tests', () => {
     });
   });
 
-  it('renders Header with mobile logout button and allows toggling profile menu', () => {
+  it('renders Header and allows toggling profile menu with logout option', () => {
     render(
       React.createElement(
         MemoryRouter,
@@ -128,11 +130,6 @@ describe('Frontend Component Tests', () => {
         React.createElement(Header, null)
       )
     );
-
-    // Direct mobile logout button is rendered
-    const mobileLogoutBtn = screen.getByRole('button', { name: 'Log out' });
-    expect(mobileLogoutBtn).toBeDefined();
-    expect(mobileLogoutBtn.classList.contains('mobile-logout-btn')).toBe(true);
 
     // Account menu avatar button
     const avatarBtn = screen.getByRole('button', { name: 'Account Menu' });
@@ -143,5 +140,78 @@ describe('Frontend Component Tests', () => {
     expect(screen.getByText('Alex Johnson')).toBeDefined();
     expect(screen.getByText('alex@example.com')).toBeDefined();
     expect(screen.getByText('Account Settings')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Log out' })).toBeDefined();
+  });
+
+  it('Modal respects closeOnClickOutside={false} and does not trigger onClose on overlay click', () => {
+    const handleClose = vi.fn();
+    const { container } = render(
+      React.createElement(
+        Modal,
+        {
+          isOpen: true,
+          onClose: handleClose,
+          title: 'Custom Modal',
+          closeOnClickOutside: false,
+        },
+        React.createElement('p', null, 'Modal Content')
+      )
+    );
+
+    const overlay = container.querySelector('.modal-overlay');
+    expect(overlay).toBeDefined();
+    fireEvent.click(overlay);
+    expect(handleClose).not.toHaveBeenCalled();
+
+    // But clicking the (X) button still closes the modal
+    const closeBtn = screen.getByRole('button', { name: 'Close modal' });
+    fireEvent.click(closeBtn);
+    expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('ScrollToTop resets scroll position to 0 on route navigation', () => {
+    const scrollToSpy = vi.fn();
+    window.scrollTo = scrollToSpy;
+    document.documentElement.scrollTop = 250;
+    document.body.scrollTop = 300;
+
+    let navigateFn;
+    function NavTestComponent() {
+      const navigate = useNavigate();
+      navigateFn = navigate;
+      return React.createElement('div', null, 'Page 1');
+    }
+
+    render(
+      React.createElement(
+        MemoryRouter,
+        { initialEntries: ['/home'] },
+        React.createElement(ScrollToTop, null),
+        React.createElement(
+          Routes,
+          null,
+          React.createElement(Route, { path: '/home', element: React.createElement(NavTestComponent) }),
+          React.createElement(Route, { path: '/items', element: React.createElement('div', null, 'Page 2') })
+        )
+      )
+    );
+
+    expect(scrollToSpy).toHaveBeenCalledWith(0, 0);
+    expect(document.documentElement.scrollTop).toBe(0);
+    expect(document.body.scrollTop).toBe(0);
+
+    // Simulate navigating to another page
+    document.documentElement.scrollTop = 400;
+    document.body.scrollTop = 400;
+    scrollToSpy.mockClear();
+
+    act(() => {
+      navigateFn('/items');
+    });
+
+    expect(scrollToSpy).toHaveBeenCalledWith(0, 0);
+    expect(document.documentElement.scrollTop).toBe(0);
+    expect(document.body.scrollTop).toBe(0);
   });
 });
+
