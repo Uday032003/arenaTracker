@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { itemsApi, variantsApi, activitiesApi, sessionsApi, favoritesApi } from '../../services/api.js';
 import { TrackingIcon } from '../../components/common/TrackingIcon.js';
-import { SkeletonItemDetails } from '../../components/common/Loader.js';
+import { SkeletonItemDetails, Spinner } from '../../components/common/Loader.js';
 import { ErrorBanner, SuccessBanner } from '../../components/common/ErrorMessage.js';
 import { Modal } from '../../components/common/Modal.js';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog.js';
@@ -119,6 +119,8 @@ export function ItemDetailsPage() {
   // Delete dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [pinLoading, setPinLoading] = useState(false);
+  const [archiveLoading, setArchiveLoading] = useState(false);
 
   const fetchItemData = async () => {
     try {
@@ -145,6 +147,7 @@ export function ItemDetailsPage() {
 
   const handleTogglePin = async () => {
     try {
+      setPinLoading(true);
       if (item.is_pinned) {
         await favoritesApi.unpin(item.id);
         setItem((prev) => ({ ...prev, is_pinned: false }));
@@ -153,19 +156,24 @@ export function ItemDetailsPage() {
         setItem((prev) => ({ ...prev, is_pinned: true }));
       }
     } catch (err) {
-      alert(err.message);
+      alert(err.message || 'Failed to update pin');
+    } finally {
+      setPinLoading(false);
     }
   };
 
   const handleArchive = async () => {
     try {
+      setArchiveLoading(true);
       const nextState = !item.is_archived;
       await itemsApi.archive(item.id, nextState);
       setItem((prev) => ({ ...prev, is_archived: nextState }));
       setSuccessMsg(nextState ? 'Item archived' : 'Item restored');
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err) {
-      alert(err.message);
+      alert(err.message || 'Failed to archive item');
+    } finally {
+      setArchiveLoading(false);
     }
   };
 
@@ -247,10 +255,25 @@ export function ItemDetailsPage() {
           <button
             className="btn btn-secondary btn-sm"
             onClick={handleTogglePin}
-            style={{ color: item.is_pinned ? 'var(--accent-green)' : 'inherit' }}
+            disabled={pinLoading}
+            style={{
+              color: item.is_pinned ? 'var(--accent-green)' : 'inherit',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
           >
-            {item.is_pinned ? <PinOff size={14} /> : <Pin size={14} />}
-            <span>{item.is_pinned ? 'Unpin' : 'Pin to Home'}</span>
+            {pinLoading ? (
+              <>
+                <Spinner size={13} color="currentColor" />
+                <span>{item.is_pinned ? 'Unpinning...' : 'Pinning...'}</span>
+              </>
+            ) : (
+              <>
+                {item.is_pinned ? <PinOff size={14} /> : <Pin size={14} />}
+                <span>{item.is_pinned ? 'Unpin' : 'Pin to Home'}</span>
+              </>
+            )}
           </button>
 
           <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/items/${item.id}/edit`)}>
@@ -258,9 +281,23 @@ export function ItemDetailsPage() {
             <span>Edit</span>
           </button>
 
-          <button className="btn btn-secondary btn-sm" onClick={handleArchive}>
-            {item.is_archived ? <RefreshCw size={14} /> : <Archive size={14} />}
-            <span>{item.is_archived ? 'Restore' : 'Archive'}</span>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={handleArchive}
+            disabled={archiveLoading}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            {archiveLoading ? (
+              <>
+                <Spinner size={13} color="currentColor" />
+                <span>{item.is_archived ? 'Restoring...' : 'Archiving...'}</span>
+              </>
+            ) : (
+              <>
+                {item.is_archived ? <RefreshCw size={14} /> : <Archive size={14} />}
+                <span>{item.is_archived ? 'Restore' : 'Archive'}</span>
+              </>
+            )}
           </button>
 
           <button
@@ -702,8 +739,10 @@ export function ItemDetailsPage() {
               type="submit"
               className="btn btn-primary"
               disabled={variantLoading || !variantName.trim()}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              {variantLoading ? 'Adding...' : 'Add Variant'}
+              {variantLoading && <Spinner size={14} color="currentColor" />}
+              <span>{variantLoading ? 'Adding...' : 'Add Variant'}</span>
             </button>
           </div>
         </form>

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { remindersApi } from '../../services/api.js';
 import { useAlarm } from '../../context/AlarmContext.js';
-import { SkeletonReminders } from '../../components/common/Loader.js';
+import { SkeletonReminders, Spinner } from '../../components/common/Loader.js';
 import { EmptyState } from '../../components/common/EmptyState.js';
 import { RingtoneSelectorModal } from '../../components/reminders/RingtoneSelectorModal.js';
 
@@ -1238,7 +1238,7 @@ export function RemindersPage() {
                     boxShadow: 'var(--shadow-green)',
                   }}
                 >
-                  <CheckCircle size={15} />
+                  {submitting ? <Spinner size={15} color="currentColor" /> : <CheckCircle size={15} />}
                   <span>{submitting ? 'Saving...' : editingReminder ? 'Update Reminder' : 'Create Reminder'}</span>
                 </button>
               </div>

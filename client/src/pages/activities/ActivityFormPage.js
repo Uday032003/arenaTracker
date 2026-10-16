@@ -17,7 +17,7 @@ import {
 import { itemsApi, variantsApi, activitiesApi } from '../../services/api.js';
 import { TrackingIcon } from '../../components/common/TrackingIcon.js';
 import { ErrorBanner, SuccessBanner } from '../../components/common/ErrorMessage.js';
-import { SkeletonForm } from '../../components/common/Loader.js';
+import { SkeletonForm, Spinner } from '../../components/common/Loader.js';
 import { Modal } from '../../components/common/Modal.js';
 
 export function ActivityFormPage() {
@@ -550,8 +550,10 @@ export function ActivityFormPage() {
             type="submit"
             className="btn btn-primary"
             disabled={loading || !selectedItemId}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            {loading ? 'Saving Occurrence...' : 'Save Activity Occurrence'}
+            {loading && <Spinner size={14} color="currentColor" />}
+            <span>{loading ? 'Saving Occurrence...' : 'Save Activity Occurrence'}</span>
           </button>
         </div>
       </form>
@@ -589,8 +591,10 @@ export function ActivityFormPage() {
               type="submit"
               className="btn btn-primary"
               disabled={newVariantLoading || !newVariantName.trim()}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              {newVariantLoading ? 'Adding...' : 'Add & Select'}
+              {newVariantLoading && <Spinner size={14} color="currentColor" />}
+              <span>{newVariantLoading ? 'Adding...' : 'Add & Select'}</span>
             </button>
           </div>
         </form>

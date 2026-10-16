@@ -1,24 +1,23 @@
 import React from 'react';
 
-export function Spinner({ size = 20, color = 'var(--accent-green)' }) {
+export function Spinner({ size = 20, color = 'var(--accent-green)', className = '', style = {} }) {
   return (
-    <div
+    <span
+      className={className}
       style={{
         width: size,
         height: size,
-        border: `2px solid rgba(255, 255, 255, 0.1)`,
+        border: `2px solid rgba(128, 128, 128, 0.25)`,
         borderTopColor: color,
         borderRadius: '50%',
         animation: 'spin 0.75s linear infinite',
         display: 'inline-block',
+        flexShrink: 0,
+        verticalAlign: 'middle',
+        boxSizing: 'border-box',
+        ...style,
       }}
-    >
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-    </div>
+    />
   );
 }
 

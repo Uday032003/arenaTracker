@@ -36,6 +36,7 @@ export function ItemsListPage() {
   // Delete dialog state
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [pinningId, setPinningId] = useState(null);
 
   // Debounce search input
   useEffect(() => {
@@ -78,6 +79,7 @@ export function ItemsListPage() {
 
   const handleTogglePin = async (item) => {
     try {
+      setPinningId(item.id);
       if (item.is_pinned) {
         await favoritesApi.unpin(item.id);
       } else {
@@ -87,7 +89,9 @@ export function ItemsListPage() {
         prev.map((i) => (i.id === item.id ? { ...i, is_pinned: !i.is_pinned } : i))
       );
     } catch (err) {
-      alert(err.message);
+      alert(err.message || 'Failed to update pin status');
+    } finally {
+      setPinningId(null);
     }
   };
 
@@ -278,6 +282,7 @@ export function ItemsListPage() {
               key={item.id}
               item={item}
               onTogglePin={handleTogglePin}
+              isPinning={pinningId === item.id}
               onArchive={handleArchive}
               onDelete={(itm) => setItemToDelete(itm)}
               onStartTimer={handleStartTimer}

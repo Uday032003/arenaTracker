@@ -18,7 +18,7 @@ import { dashboardApi, sessionsApi, favoritesApi, itemsApi, placesApi } from '..
 import { useAuth } from '../context/AuthContext.js';
 import { TrackingIcon } from '../components/common/TrackingIcon.js';
 import { ActiveTimerCard } from '../components/sessions/ActiveTimerCard.js';
-import { PageLoader, SkeletonCard, SkeletonHome } from '../components/common/Loader.js';
+import { PageLoader, SkeletonCard, SkeletonHome, Spinner } from '../components/common/Loader.js';
 import { EmptyState } from '../components/common/EmptyState.js';
 import { ErrorBanner } from '../components/common/ErrorMessage.js';
 import { Modal } from '../components/common/Modal.js';
@@ -36,6 +36,12 @@ export function HomePage() {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [libraryItems, setLibraryItems] = useState([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
+  const [pinningId, setPinningId] = useState(null);
+
+  // Card action loading states
+  const [unpinningId, setUnpinningId] = useState(null);
+  const [startingTimerId, setStartingTimerId] = useState(null);
+  const [stoppingSessionId, setStoppingSessionId] = useState(null);
 
   // Add Place modal state
   const [isPlaceModalOpen, setIsPlaceModalOpen] = useState(false);
@@ -45,9 +51,9 @@ export function HomePage() {
   const [placeNotes, setPlaceNotes] = useState('');
   const [placeLoading, setPlaceLoading] = useState(false);
 
-  const fetchDashboard = async () => {
+  const fetchDashboard = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       setError(null);
       const [sumRes, recRes] = await Promise.all([
         dashboardApi.getSummary(),
@@ -58,7 +64,7 @@ export function HomePage() {
     } catch (err) {
       setError(err.message || 'Failed to load home dashboard');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
@@ -68,28 +74,37 @@ export function HomePage() {
 
   const handleStopSession = async (sessionId) => {
     try {
+      setStoppingSessionId(sessionId);
       await sessionsApi.stop(sessionId, { createActivityLog: true });
-      fetchDashboard();
+      await fetchDashboard(true);
     } catch (err) {
       alert(err.message || 'Failed to stop session');
+    } finally {
+      setStoppingSessionId(null);
     }
   };
 
   const handleStartTimer = async (itemId) => {
     try {
+      setStartingTimerId(itemId);
       await sessionsApi.start({ itemId });
-      fetchDashboard();
+      await fetchDashboard(true);
     } catch (err) {
       alert(err.message || 'Failed to start session');
+    } finally {
+      setStartingTimerId(null);
     }
   };
 
   const handleUnpin = async (itemId) => {
     try {
+      setUnpinningId(itemId);
       await favoritesApi.unpin(itemId);
-      fetchDashboard();
+      await fetchDashboard(true);
     } catch (err) {
       alert(err.message || 'Failed to unpin item');
+    } finally {
+      setUnpinningId(null);
     }
   };
 
@@ -107,18 +122,22 @@ export function HomePage() {
   };
 
   const handleTogglePin = async (item) => {
+    if (pinningId) return;
     try {
+      setPinningId(item.id);
       if (item.is_pinned) {
         await favoritesApi.unpin(item.id);
       } else {
         await favoritesApi.pin(item.id);
       }
-      // Refresh library items and dashboard
+      // Refresh library items and dashboard in background without page skeleton flicker
       const res = await itemsApi.getAll();
       setLibraryItems(res.data || []);
-      fetchDashboard();
+      await fetchDashboard(true);
     } catch (err) {
-      alert(err.message);
+      alert(err.message || 'Failed to update pin status');
+    } finally {
+      setPinningId(null);
     }
   };
 
@@ -299,6 +318,7 @@ export function HomePage() {
                 session={session}
                 onStop={handleStopSession}
                 onAddPlace={handleOpenAddPlace}
+                isStopping={stoppingSessionId === session.id}
               />
             ))}
           </div>
@@ -387,9 +407,10 @@ export function HomePage() {
                       className="btn btn-ghost btn-sm"
                       style={{ padding: '4px', color: 'var(--text-muted)' }}
                       onClick={() => handleUnpin(item.id)}
+                      disabled={unpinningId === item.id}
                       title="Unpin from Home"
                     >
-                      <PinOff size={14} />
+                      {unpinningId === item.id ? <Spinner size={14} color="var(--accent-green)" /> : <PinOff size={14} />}
                     </button>
                   </div>
 
@@ -421,11 +442,21 @@ export function HomePage() {
                   {item.tracking_type === 'timed' || item.tracking_type === 'trip' ? (
                     <button
                       className="btn btn-secondary btn-sm"
-                      style={{ flex: 1 }}
+                      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                       onClick={() => handleStartTimer(item.id)}
+                      disabled={startingTimerId === item.id}
                     >
-                      <Play size={14} />
-                      <span>Start Timer</span>
+                      {startingTimerId === item.id ? (
+                        <>
+                          <Spinner size={13} color="currentColor" />
+                          <span>Starting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play size={14} />
+                          <span>Start Timer</span>
+                        </>
+                      )}
                     </button>
                   ) : (
                     <button
@@ -605,8 +636,23 @@ export function HomePage() {
                 <button
                   className={`btn btn-sm ${item.is_pinned ? 'btn-danger' : 'btn-primary'}`}
                   onClick={() => handleTogglePin(item)}
+                  disabled={pinningId !== null}
+                  style={{
+                    minWidth: '100px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
                 >
-                  {item.is_pinned ? 'Unpin' : 'Pin to Home'}
+                  {pinningId === item.id ? (
+                    <>
+                      <Spinner size={13} color="currentColor" />
+                      <span>{item.is_pinned ? 'Unpinning...' : 'Pinning...'}</span>
+                    </>
+                  ) : (
+                    <span>{item.is_pinned ? 'Unpin' : 'Pin to Home'}</span>
+                  )}
                 </button>
               </div>
             ))}
@@ -664,8 +710,10 @@ export function HomePage() {
               type="submit"
               className="btn btn-primary"
               disabled={placeLoading || !placeName}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              {placeLoading ? 'Saving...' : 'Add Place'}
+              {placeLoading && <Spinner size={14} color="currentColor" />}
+              <span>{placeLoading ? 'Saving...' : 'Add Place'}</span>
             </button>
           </div>
         </form>

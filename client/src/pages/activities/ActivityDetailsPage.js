@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { activitiesApi } from '../../services/api.js';
 import { TrackingIcon } from '../../components/common/TrackingIcon.js';
-import { SkeletonActivityDetails } from '../../components/common/Loader.js';
+import { SkeletonActivityDetails, Spinner } from '../../components/common/Loader.js';
 import { ErrorBanner, SuccessBanner } from '../../components/common/ErrorMessage.js';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog.js';
 import { Modal } from '../../components/common/Modal.js';
@@ -344,8 +344,10 @@ export function ActivityDetailsPage() {
               type="submit"
               className="btn btn-primary"
               disabled={savingEdit}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              {savingEdit ? 'Saving...' : 'Save Changes'}
+              {savingEdit && <Spinner size={14} color="currentColor" />}
+              <span>{savingEdit ? 'Saving...' : 'Save Changes'}</span>
             </button>
           </div>
         </form>

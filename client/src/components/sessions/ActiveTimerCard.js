@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Square, Clock, Navigation } from 'lucide-react';
 import { TrackingIcon } from '../common/TrackingIcon.js';
+import { Spinner } from '../common/Loader.js';
 
-export function ActiveTimerCard({ session, onStop, onAddPlace }) {
+export function ActiveTimerCard({ session, onStop, onAddPlace, isStopping = false }) {
   const [elapsed, setElapsed] = useState(() => {
     const started = new Date(session.started_at).getTime();
     return Math.max(0, Math.floor((Date.now() - started) / 1000));
@@ -102,9 +103,20 @@ export function ActiveTimerCard({ session, onStop, onAddPlace }) {
         <button
           className="btn btn-danger btn-sm"
           onClick={() => onStop(session.id)}
+          disabled={isStopping}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
-          <Square size={14} />
-          <span>Stop {isTrip ? 'Ride' : 'Session'}</span>
+          {isStopping ? (
+            <>
+              <Spinner size={13} color="currentColor" />
+              <span>Stopping...</span>
+            </>
+          ) : (
+            <>
+              <Square size={14} />
+              <span>Stop {isTrip ? 'Ride' : 'Session'}</span>
+            </>
+          )}
         </button>
       </div>
     </div>

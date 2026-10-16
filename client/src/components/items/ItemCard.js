@@ -2,10 +2,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Pin, PinOff, Archive, RefreshCw, Trash2, Edit2, Play, Plus } from 'lucide-react';
 import { TrackingIcon } from '../common/TrackingIcon.js';
+import { Spinner } from '../common/Loader.js';
 
 export function ItemCard({
   item,
   onTogglePin,
+  isPinning = false,
   onArchive,
   onDelete,
   onStartTimer,
@@ -86,9 +88,10 @@ export function ItemCard({
                 className="btn btn-ghost btn-sm"
                 style={{ padding: '4px', color: item.is_pinned ? 'var(--accent-green)' : 'var(--text-muted)' }}
                 onClick={() => onTogglePin(item)}
+                disabled={isPinning}
                 title={item.is_pinned ? 'Unpin from Home' : 'Pin to Home'}
               >
-                {item.is_pinned ? <Pin size={15} /> : <PinOff size={15} />}
+                {isPinning ? <Spinner size={14} color="var(--accent-green)" /> : item.is_pinned ? <Pin size={15} /> : <PinOff size={15} />}
               </button>
             )}
             <button

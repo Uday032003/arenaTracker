@@ -9,10 +9,11 @@ import {
   Trash2,
   CheckCircle,
   AlertTriangle,
+  LogOut,
 } from 'lucide-react';
 import { settingsApi } from '../../services/api.js';
 import { useAuth } from '../../context/AuthContext.js';
-import { SkeletonSettings } from '../../components/common/Loader.js';
+import { SkeletonSettings, Spinner } from '../../components/common/Loader.js';
 import { ErrorBanner, SuccessBanner } from '../../components/common/ErrorMessage.js';
 import { Modal } from '../../components/common/Modal.js';
 
@@ -41,6 +42,8 @@ export function SettingsPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
@@ -92,7 +95,7 @@ export function SettingsPage() {
 
   const handleExportData = async () => {
     try {
-      const tokenHeader = {};
+      setExporting(true);
       const res = await fetch(settingsApi.exportUrl, {
         credentials: 'include',
       });
@@ -107,7 +110,21 @@ export function SettingsPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert(err.message);
+      alert(err.message || 'Failed to export data');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await logout();
+      navigate('/login');
+    } catch (err) {
+      alert(err.message || 'Failed to log out');
+    } finally {
+      setLoggingOut(false);
     }
   };
 
@@ -208,8 +225,14 @@ export function SettingsPage() {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-2)' }}>
-          <button type="submit" className="btn btn-primary" disabled={saving}>
-            {saving ? 'Saving...' : 'Save Settings'}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={saving}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            {saving && <Spinner size={14} color="currentColor" />}
+            <span>{saving ? 'Saving...' : 'Save Settings'}</span>
           </button>
         </div>
       </form>
@@ -224,9 +247,45 @@ export function SettingsPage() {
           Download a complete JSON export of all your items, variants, occurrences, timed sessions, and visited places. You own all your data.
         </p>
         <div>
-          <button className="btn btn-secondary" onClick={handleExportData}>
-            <Download size={16} />
-            <span>Export All Data (.json)</span>
+          <button
+            className="btn btn-secondary"
+            onClick={handleExportData}
+            disabled={exporting}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            {exporting ? (
+              <>
+                <Spinner size={14} color="currentColor" />
+                <span>Exporting Data...</span>
+              </>
+            ) : (
+              <>
+                <Download size={16} />
+                <span>Export All Data (.json)</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Active Session & Logout */}
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+        <h2 style={{ fontSize: 'var(--font-size-base)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <LogOut size={18} color="var(--accent-green)" />
+          <span>Active Session</span>
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', lineHeight: 1.6 }}>
+          Currently logged in as <strong style={{ color: 'var(--text-primary)' }}>{user?.email}</strong>.
+        </p>
+        <div>
+          <button
+            className="btn btn-secondary"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--danger)' }}
+          >
+            {loggingOut ? <Spinner size={14} color="var(--danger)" /> : <LogOut size={16} />}
+            <span>{loggingOut ? 'Logging out...' : 'Log out of Account'}</span>
           </button>
         </div>
       </div>
@@ -295,8 +354,10 @@ export function SettingsPage() {
               type="submit"
               className="btn btn-danger"
               disabled={deleting || !deletePassword}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              {deleting ? 'Deleting...' : 'Permanently Delete'}
+              {deleting && <Spinner size={14} color="currentColor" />}
+              <span>{deleting ? 'Deleting...' : 'Permanently Delete'}</span>
             </button>
           </div>
         </form>

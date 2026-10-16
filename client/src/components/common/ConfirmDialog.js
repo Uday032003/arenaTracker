@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal } from './Modal.js';
 import { AlertTriangle } from 'lucide-react';
+import { Spinner } from './Loader.js';
 
 export function ConfirmDialog({
   isOpen,
@@ -18,6 +19,7 @@ export function ConfirmDialog({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
+      closeDisabled={isLoading}
       footer={
         <>
           <button className="btn btn-secondary" onClick={onClose} disabled={isLoading}>
@@ -27,8 +29,10 @@ export function ConfirmDialog({
             className={`btn ${isDanger ? 'btn-danger' : 'btn-primary'}`}
             onClick={onConfirm}
             disabled={isLoading}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            {isLoading ? 'Processing...' : confirmText}
+            {isLoading && <Spinner size={14} color="currentColor" />}
+            <span>{isLoading ? 'Processing...' : confirmText}</span>
           </button>
         </>
       }

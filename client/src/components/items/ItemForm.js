@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { categoriesApi } from '../../services/api.js';
 import { TrackingIcon } from '../common/TrackingIcon.js';
 import { ErrorBanner, WarningBanner } from '../common/ErrorMessage.js';
+import { Spinner } from '../common/Loader.js';
 
 export const AVAILABLE_ICONS = [
   'activity', 'utensils', 'footprints', 'bike', 'phone', 'coffee',
@@ -317,8 +318,14 @@ export function ItemForm({
             Cancel
           </button>
         )}
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Saving...' : submitLabel || (isEditing ? 'Save Changes' : 'Create Item')}
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={loading}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+        >
+          {loading && <Spinner size={14} color="currentColor" />}
+          <span>{loading ? 'Saving...' : submitLabel || (isEditing ? 'Save Changes' : 'Create Item')}</span>
         </button>
       </div>
     </form>

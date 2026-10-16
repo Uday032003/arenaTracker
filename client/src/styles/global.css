@@ -360,6 +360,15 @@ h3 {
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Modal */
 .modal-overlay {
   position: fixed;
@@ -516,6 +525,10 @@ h3 {
   align-items: center;
 }
 
+.mobile-logout-btn {
+  display: flex;
+}
+
 .app-container {
   width: 100%;
   max-width: var(--max-content-width);
@@ -528,6 +541,10 @@ h3 {
 /* Desktop styles */
 @media (min-width: 768px) {
   .header-mobile-brand {
+    display: none;
+  }
+
+  .mobile-logout-btn {
     display: none;
   }
 
