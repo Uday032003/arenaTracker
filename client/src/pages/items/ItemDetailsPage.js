@@ -110,8 +110,10 @@ export function ItemDetailsPage() {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
-  // Variant creation state
+  // Variant management state
   const [isVariantModalOpen, setIsVariantModalOpen] = useState(false);
+  const [editingVariant, setEditingVariant] = useState(null);
+  const [variantToDelete, setVariantToDelete] = useState(null);
   const [variantName, setVariantName] = useState('');
   const [variantDescription, setVariantDescription] = useState('');
   const [variantLoading, setVariantLoading] = useState(false);
@@ -150,13 +152,15 @@ export function ItemDetailsPage() {
     const action = item.is_pinned ? 'unpin' : 'pin';
     try {
       setPinningAction(action);
+      let nextPinned = false;
       if (item.is_pinned) {
         await favoritesApi.unpin(item.id);
-        setItem((prev) => ({ ...prev, is_pinned: false }));
+        nextPinned = false;
       } else {
         await favoritesApi.pin(item.id);
-        setItem((prev) => ({ ...prev, is_pinned: true }));
+        nextPinned = true;
       }
+      setItem((prev) => ({ ...prev, is_pinned: nextPinned }));
     } catch (err) {
       alert(err.message || 'Failed to update pin');
     } finally {
@@ -193,22 +197,65 @@ export function ItemDetailsPage() {
     }
   };
 
-  const handleCreateVariant = async (e) => {
+  const handleOpenAddVariant = () => {
+    setEditingVariant(null);
+    setVariantName('');
+    setVariantDescription('');
+    setIsVariantModalOpen(true);
+  };
+
+  const handleOpenEditVariant = (v) => {
+    setEditingVariant(v);
+    setVariantName(v.name || '');
+    setVariantDescription(v.description || '');
+    setIsVariantModalOpen(true);
+  };
+
+  const handleCloseVariantModal = () => {
+    setIsVariantModalOpen(false);
+    setEditingVariant(null);
+    setVariantName('');
+    setVariantDescription('');
+  };
+
+  const handleSaveVariant = async (e) => {
     e.preventDefault();
     if (!variantName.trim()) return;
 
     try {
       setVariantLoading(true);
-      await variantsApi.create(itemId, {
-        name: variantName.trim(),
-        description: variantDescription.trim(),
-      });
-      setIsVariantModalOpen(false);
-      setVariantName('');
-      setVariantDescription('');
+      if (editingVariant) {
+        await variantsApi.update(editingVariant.id, {
+          name: variantName.trim(),
+          description: variantDescription.trim(),
+        });
+        setSuccessMsg(`Variant "${variantName.trim()}" updated successfully.`);
+      } else {
+        await variantsApi.create(itemId, {
+          name: variantName.trim(),
+          description: variantDescription.trim(),
+        });
+        setSuccessMsg(`Variant "${variantName.trim()}" created successfully.`);
+      }
+      handleCloseVariantModal();
       fetchItemData();
     } catch (err) {
-      alert(err.message);
+      alert(err.message || 'Failed to save variant');
+    } finally {
+      setVariantLoading(false);
+    }
+  };
+
+  const handleDeleteVariantConfirm = async () => {
+    if (!variantToDelete) return;
+    try {
+      setVariantLoading(true);
+      await variantsApi.delete(variantToDelete.id);
+      setSuccessMsg(`Variant "${variantToDelete.name}" removed successfully.`);
+      setVariantToDelete(null);
+      fetchItemData();
+    } catch (err) {
+      alert(err.message || 'Failed to remove variant');
     } finally {
       setVariantLoading(false);
     }
@@ -261,7 +308,14 @@ export function ItemDetailsPage() {
             onClick={handleTogglePin}
             disabled={pinningAction !== null}
             style={{
-              color: item.is_pinned ? 'var(--accent-green)' : 'inherit',
+              color:
+                pinningAction !== null
+                  ? pinningAction === 'unpin'
+                    ? 'var(--accent-green)'
+                    : 'inherit'
+                  : item.is_pinned
+                  ? 'var(--accent-green)'
+                  : 'inherit',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
@@ -564,7 +618,7 @@ export function ItemDetailsPage() {
               Variants & Varieties ({item.variants?.length || 0})
             </h2>
           </div>
-          <button className="btn btn-secondary btn-sm" onClick={() => setIsVariantModalOpen(true)}>
+          <button className="btn btn-secondary btn-sm" onClick={handleOpenAddVariant}>
             <Plus size={14} /> Add Variant
           </button>
         </div>
@@ -601,14 +655,32 @@ export function ItemDetailsPage() {
                     ({v.description})
                   </span>
                 )}
-                <button
-                  className="btn btn-ghost btn-sm"
-                  style={{ padding: '2px', color: 'var(--accent-green)' }}
-                  onClick={() => navigate(`/activities/new?itemId=${item.id}&variantId=${v.id}`)}
-                  title={`Log ${v.name}`}
-                >
-                  <Plus size={12} /> Log
-                </button>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginLeft: 'var(--space-1)' }}>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ padding: '2px 6px', color: 'var(--accent-green)', height: '24px' }}
+                    onClick={() => navigate(`/activities/new?itemId=${item.id}&variantId=${v.id}`)}
+                    title={`Log occurrence with ${v.name}`}
+                  >
+                    <Plus size={12} /> Log
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ padding: '2px 6px', color: 'var(--text-secondary)', height: '24px' }}
+                    onClick={() => handleOpenEditVariant(v)}
+                    title={`Edit ${v.name}`}
+                  >
+                    <Edit2 size={12} />
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ padding: '2px 6px', color: 'var(--danger)', height: '24px' }}
+                    onClick={() => setVariantToDelete(v)}
+                    title={`Remove ${v.name}`}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -702,13 +774,13 @@ export function ItemDetailsPage() {
         )}
       </section>
 
-      {/* Add Variant Modal */}
+      {/* Add / Edit Variant Modal */}
       <Modal
         isOpen={isVariantModalOpen}
-        onClose={() => setIsVariantModalOpen(false)}
-        title={`Add Variant to ${item.name}`}
+        onClose={handleCloseVariantModal}
+        title={editingVariant ? `Edit Variant: ${editingVariant.name}` : `Add Variant to ${item.name}`}
       >
-        <form onSubmit={handleCreateVariant}>
+        <form onSubmit={handleSaveVariant}>
           <div className="form-group">
             <label className="form-label">Variant Name *</label>
             <input
@@ -735,7 +807,7 @@ export function ItemDetailsPage() {
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => setIsVariantModalOpen(false)}
+              onClick={handleCloseVariantModal}
             >
               Cancel
             </button>
@@ -746,11 +818,31 @@ export function ItemDetailsPage() {
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
               {variantLoading && <Spinner size={14} color="currentColor" />}
-              <span>{variantLoading ? 'Adding...' : 'Add Variant'}</span>
+              <span>
+                {variantLoading
+                  ? editingVariant
+                    ? 'Saving...'
+                    : 'Adding...'
+                  : editingVariant
+                  ? 'Save Changes'
+                  : 'Add Variant'}
+              </span>
             </button>
           </div>
         </form>
       </Modal>
+
+      {/* Delete Variant Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(variantToDelete)}
+        onClose={() => setVariantToDelete(null)}
+        onConfirm={handleDeleteVariantConfirm}
+        title="Remove Variant"
+        message={`Are you sure you want to remove variant "${variantToDelete?.name}"? Past activities recorded with this variant will still keep their history.`}
+        confirmText="Remove Variant"
+        isDanger={true}
+        isLoading={variantLoading}
+      />
 
       {/* Delete Item Confirmation Dialog */}
       <ConfirmDialog

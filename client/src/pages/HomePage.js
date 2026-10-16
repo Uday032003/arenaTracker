@@ -131,10 +131,12 @@ export function HomePage() {
       } else {
         await favoritesApi.pin(item.id);
       }
-      // Refresh library items and dashboard in background without page skeleton flicker
-      const res = await itemsApi.getAll();
+      // Refresh library items and dashboard in parallel
+      const [res] = await Promise.all([
+        itemsApi.getAll(),
+        fetchDashboard(true)
+      ]);
       setLibraryItems(res.data || []);
-      await fetchDashboard(true);
     } catch (err) {
       alert(err.message || 'Failed to update pin status');
     } finally {
@@ -644,7 +646,15 @@ export function HomePage() {
                   <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500 }}>{item.name}</span>
                 </div>
                 <button
-                  className={`btn btn-sm ${item.is_pinned ? 'btn-danger' : 'btn-primary'}`}
+                  className={`btn btn-sm ${
+                    pinningState?.id === item.id
+                      ? pinningState.action === 'unpin'
+                        ? 'btn-danger'
+                        : 'btn-primary'
+                      : item.is_pinned
+                      ? 'btn-danger'
+                      : 'btn-primary'
+                  }`}
                   onClick={() => handleTogglePin(item)}
                   disabled={pinningState !== null}
                   style={{
